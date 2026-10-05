@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import codecs
 import json
 import os
 from dataclasses import replace
@@ -36,6 +37,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
                 "astm_receive_timeout_seconds": raw["astm"].get(
                     "receive_timeout_seconds", settings.astm_receive_timeout_seconds
                 ),
+                "astm_tcp_role": raw["astm"].get("tcp_role", settings.astm_tcp_role),
+                "astm_keep_connection": raw["astm"].get("keep_connection", settings.astm_keep_connection),
+                "astm_encoding": raw["astm"].get("encoding", settings.astm_encoding),
             })
         settings = replace(settings, **{key: value for key, value in flat.items() if hasattr(settings, key) and not isinstance(value, dict)})
 
@@ -62,6 +66,9 @@ def load_settings(config_path: Path | None = None) -> Settings:
         "astm_retry_count": os.getenv(prefix + "ASTM_RETRY_COUNT"),
         "astm_checksum": os.getenv(prefix + "ASTM_CHECKSUM"),
         "astm_receive_timeout_seconds": os.getenv(prefix + "ASTM_RECEIVE_TIMEOUT_SECONDS"),
+        "astm_tcp_role": os.getenv(prefix + "ASTM_TCP_ROLE"),
+        "astm_keep_connection": os.getenv(prefix + "ASTM_KEEP_CONNECTION"),
+        "astm_encoding": os.getenv(prefix + "ASTM_ENCODING"),
     }
     converted: dict[str, Any] = {}
     integer_fields = {"web_port", "gateway_port", "max_message_bytes", "random_seed", "astm_frame_size", "astm_retry_count"}
@@ -77,6 +84,8 @@ def load_settings(config_path: Path | None = None) -> Settings:
             converted[key] = float(value)
         elif key == "astm_checksum":
             converted[key] = _as_bool(value, settings.astm_checksum)
+        elif key == "astm_keep_connection":
+            converted[key] = _as_bool(value, settings.astm_keep_connection)
         else:
             converted[key] = value
     if converted:
@@ -85,4 +94,10 @@ def load_settings(config_path: Path | None = None) -> Settings:
         raise ValueError("mode must be 'fixture' or 'live'")
     if settings.protocol not in {"hl7", "astm"}:
         raise ValueError("protocol must be 'hl7' or 'astm'")
+    if settings.astm_tcp_role not in {"client", "server"}:
+        raise ValueError("astm_tcp_role must be 'client' or 'server'")
+    try:
+        codecs.lookup(settings.astm_encoding)
+    except LookupError as error:
+        raise ValueError(f"unknown astm_encoding: {settings.astm_encoding}") from error
     return settings

@@ -142,3 +142,9 @@ class Settings:
     astm_retry_count: int = 3
     astm_checksum: bool = True
     astm_receive_timeout_seconds: float = 5.0
+    # "client": connect to gateway_host:gateway_port. "server": listen there and wait for the LIS.
+    astm_tcp_role: str = "client"
+    # Hold the TCP link open across ENQ...EOT sessions, as analyzers do.
+    astm_keep_connection: bool = True
+    # LIS02-A2 is 8-bit; latin-1 round-trips every byte. Use utf-8 when the host sends UTF-8 names.
+    astm_encoding: str = "latin-1"

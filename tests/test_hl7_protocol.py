@@ -52,6 +52,32 @@ class Hl7ProtocolTests(unittest.TestCase):
         self.assertIn("OBX|1|NM|HGB^Hemoglobin", result)
         self.assertTrue(control_id.startswith("RES-"))
 
+    def test_query_puts_specimen_in_qrd_8(self) -> None:
+        message = self.protocol.query_message("SAMPLE-CBC-001", "QRY-TEST-001")
+        qrd = next(line for line in message.split("\r") if line.startswith("QRD|")).split("|")
+        self.assertEqual(["R", "I", "QRY-TEST-001"], qrd[2:5], "QRD-2 format, QRD-3 priority, QRD-4 query ID")
+        self.assertEqual("1^RD", qrd[7], "QRD-7 quantity limited request")
+        self.assertEqual("SAMPLE-CBC-001", qrd[8], "QRD-8 who subject filter")
+        self.assertEqual("RES", qrd[9], "QRD-9 what subject filter")
+
+    def test_obx_uses_hl7_positions_and_value_types(self) -> None:
+        worklist = Worklist.from_dict({"sample_identifier": "SAMPLE-1", "ordered_tests": [{"code": "HGB"}]})
+        message, _ = self.protocol.result_message(
+            worklist,
+            [
+                ResultValue("HGB", "Hemoglobin", "14.2", "g/dL", "12-17", "N", "F"),
+                ResultValue("ALT", "ALT", ">1500", "U/L", "0-40", ">", "F"),
+                ResultValue("HBSAG", "HBsAg", "Negative", "", "", "N", "F"),
+            ],
+        )
+        hgb, alt, hbsag = [line.split("|") for line in message.split("\r") if line.startswith("OBX|")]
+        self.assertEqual(["NM", "HGB^Hemoglobin", "", "14.2", "g/dL", "12-17", "N"], hgb[2:9], "OBX-2..OBX-8")
+        self.assertEqual("F", hgb[11], "OBX-11 observation result status")
+        self.assertRegex(hgb[14], r"^\d{14}$", "OBX-14 date/time of the observation")
+        self.assertEqual(self.protocol.settings.analyzer_name, hgb[18], "OBX-18 equipment instance identifier")
+        self.assertEqual(["SN", ">^1500"], [alt[2], alt[5]], "comparator values are structured numerics")
+        self.assertEqual(["ST", "Negative"], [hbsag[2], hbsag[5]], "text results are ST")
+
     def test_ack_parser_accepts_aa_and_rejects_missing_msa(self) -> None:
         ack = self.protocol.acknowledgement("RES-1")
         self.assertEqual(("AA", "RES-1"), self.protocol.parse_ack(ack))

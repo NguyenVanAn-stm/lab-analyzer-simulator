@@ -16,7 +16,7 @@ The simulator sends `QRY^R02` with the scanned sample identifier in the query de
 
 ## Result
 
-The simulator sends `ORU^R01` with PID, ORC, OBR, and one OBX per ordered test. Each normal result has a unique message-control ID. The `duplicate` scenario intentionally reuses the prior result ID so duplicate handling can be tested explicitly.
+The simulator sends `ORU^R01` with PID, ORC, OBR, and one OBX per ordered test. OBX carries the value type in OBX-2 (`NM` number, `SN` comparator value such as `>^1500`, `ST` text), the value in OBX-5, units/range/flag in OBX-6..8, the result status in OBX-11, the observation time in OBX-14 and the analyzer name in OBX-18. The query's QRD puts the quantity limit `1^RD` in QRD-7, the specimen ID in QRD-8 and `RES` in QRD-9. Each normal result has a unique message-control ID. The `duplicate` scenario intentionally reuses the prior result ID so duplicate handling can be tested explicitly.
 
 ## Acknowledgement
 

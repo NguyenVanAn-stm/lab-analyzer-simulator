@@ -21,6 +21,9 @@ The default configuration is safe for local fixture testing:
 | `LAB_SIM_ASTM_RETRY_COUNT` | `3` | ASTM NAK retry limit |
 | `LAB_SIM_ASTM_CHECKSUM` | `true` | Validate and emit ASTM checksums |
 | `LAB_SIM_ASTM_RECEIVE_TIMEOUT_SECONDS` | `5.0` | ASTM control/frame read timeout |
+| `LAB_SIM_ASTM_TCP_ROLE` | `client` | `client` connects to the gateway; `server` listens on gateway host/port for the LIS |
+| `LAB_SIM_ASTM_KEEP_CONNECTION` | `true` | Keep the ASTM TCP link open across sessions |
+| `LAB_SIM_ASTM_ENCODING` | `latin-1` | Byte encoding of ASTM records (`utf-8` for UTF-8 hosts) |
 
 Environment variables override an optional JSON configuration file. Do not commit local configuration files containing network addresses or secrets.
 

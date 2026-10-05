@@ -114,6 +114,17 @@ def create_server(engine: SimulationEngine, host: str, port: int) -> SimulatorHt
 
 def serve(engine: SimulationEngine, host: str, port: int) -> None:
     server = create_server(engine, host, port)
+    settings = engine.settings
+    # The server is otherwise silent, which reads as "hung" in a console.
+    print(
+        f"Lab Analyzer Simulator {settings.mode} mode, protocol {engine.protocol.protocol_id}: "
+        f"http://{host}:{port}  (Ctrl+C to stop)",
+        flush=True,
+    )
+    if settings.mode == "live":
+        listens = engine.protocol.protocol_id == "astm" and settings.astm_tcp_role == "server"
+        target = "listening on" if listens else "host"
+        print(f"  {target} {settings.gateway_host}:{settings.gateway_port}", flush=True)
     try:
         server.serve_forever()
     except KeyboardInterrupt:

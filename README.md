@@ -11,8 +11,8 @@ It is designed for local development, integration testing, demonstrations, and p
 - Fixture mode for deterministic local tests without a host system.
 - Live mode for sending HL7/MLLP queries and results to a configured host.
 - HL7 v2.5 `QRY^R02`, `DSR^Q03`, `ORU^R01`, and ACK message support.
-- ASTM/LIS2-style `H`, `P`, `O`, `Q`, `R`, `C`, and `L` record support over ASTM TCP.
-- ASTM ENQ/ACK/NAK/EOT sessions, STX/ETX/ETB framing, frame numbers, checksums, retries, and multi-frame messages.
+- CLSI LIS02-A2 (ASTM E1394) `H`, `P`, `O`, `Q`, `R`, `C`, and `L` records at standard field positions, with H-2 delimiters and escape sequences.
+- CLSI LIS01-A2 (ASTM E1381) ENQ/ACK/NAK/EOT sessions, one record per frame, ETB continuation, frame numbers, checksums, retries, contention handling, a persistent link, and client or server TCP role.
 - A protocol registry/factory so the simulation engine is independent of HL7 and ASTM details.
 - Explicit analyzer state machine with failure states.
 - Generic profiles for hematology/CBC, chemistry, coagulation, immunoassay, urinalysis, and blood gas.

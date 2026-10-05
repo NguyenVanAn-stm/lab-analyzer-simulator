@@ -62,6 +62,9 @@ class SimulationEngine:
                 settings.astm_frame_size,
                 settings.astm_retry_count,
                 settings.astm_checksum,
+                role=settings.astm_tcp_role,
+                keep_connection=settings.astm_keep_connection,
+                encoding=settings.astm_encoding,
             )
         return MllpTransport(
             settings.gateway_host,
@@ -76,6 +79,7 @@ class SimulationEngine:
             settings = replace(self.settings, protocol=protocol_id)
             self.protocol = self.registry.create(protocol_id, settings)
             self.settings = settings
+            self.transport.close()
             self.transport = self._create_transport(settings)
             self._transition(AnalyzerState.DISCONNECTED, detail=f"protocol selected: {protocol_id}")
 

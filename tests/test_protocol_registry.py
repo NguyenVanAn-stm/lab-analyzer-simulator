@@ -25,18 +25,20 @@ class ProtocolRegistryTests(unittest.TestCase):
         self.assertIn("R|", engine.messages[-2]["message"])
 
     def test_engine_astm_live_flow_uses_fake_host_over_tcp(self) -> None:
-        worklist = "\r".join([
-            "H|\\^&|HOST|LIS|2.0",
-            "P|1|PATIENT-1|||Synthetic Patient",
-            "O|1|ACCESSION-1|ORDER-1||WBC^White Blood Cell|R",
-            "L|1|N", "",
-        ])
-        host = AstmFakeHost(worklist, expected_sessions=2)
+        worklist = [
+            "H|\\^&|||HOST|||||||P|LIS2-A2|20260101000000",
+            "P|1|PATIENT-1|||Synthetic^Patient",
+            "O|1|SAMPLE-001||^^^WBC\\^^^HGB|R||||||A||||WHOLE_BLOOD||||||||||O",
+            "L|1|N",
+        ]
+        host = AstmFakeHost(worklist)
         host.start()
         try:
             settings = Settings(protocol="astm", mode="live", gateway_host=host.host, gateway_port=host.port, connect_timeout_seconds=1, astm_receive_timeout_seconds=1, random_seed=42)
             engine = SimulationEngine(ROOT, settings)
             run = engine.run("cbc-normal", "SAMPLE-001")
+            host.wait_for(lambda: len(host.received_results) == 1)
+            engine.transport.close()
         finally:
             host.close()
         self.assertIsNone(host.error)

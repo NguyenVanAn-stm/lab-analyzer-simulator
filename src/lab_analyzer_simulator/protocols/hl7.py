@@ -67,8 +67,10 @@ class Hl7Protocol(AnalyzerProtocol):
         control_id = control_id or self.control_id("QRY")
         if not sample_identifier.strip():
             raise Hl7ProtocolError("sample_identifier is required")
+        # QRD-1 query time, -2 format R (record-oriented), -3 priority I (immediate), -4 query ID,
+        # -7 quantity limit "1^RD" (one record), -8 who-subject filter = specimen ID, -9 what = RES.
         qrd = "|".join(
-            ["QRD", self.timestamp(), "R", "I", control_id, "", "RD", self._clean(sample_identifier), "", "", "RES"]
+            ["QRD", self.timestamp(), "R", "I", control_id, "", "", "1^RD", self._clean(sample_identifier), "RES"]
         )
         qrf = "QRF|SIMULATOR||||||"
         return "\r".join([self._msh("QRY^R02", control_id), qrd, qrf]) + "\r"
@@ -190,25 +192,30 @@ class Hl7Protocol(AnalyzerProtocol):
             f"OBR|1|{self._clean(worklist.order_number)}|{self._clean(worklist.accession_number)}|"
             f"PANEL^{self._clean(worklist.specimen)}|||{self.timestamp()}||||||||{self._clean(worklist.specimen)}"
         )
+        observed = self.timestamp()
         for index, result in enumerate(results, start=1):
-            lines.append(
-                "|".join(
-                    [
-                        "OBX",
-                        str(index),
-                        "NM",
-                        f"{self._clean(result.code)}^{self._clean(result.name)}",
-                        "",
-                        self._clean(result.value),
-                        self._clean(result.units),
-                        self._clean(result.reference_range),
-                        self._clean(result.abnormal_flag),
-                        "",
-                        "F",
-                    ]
-                )
-            )
+            value_type, value = self._typed_value(result.value)
+            # OBX-2 value type, -3 observation ID, -5 value, -6 units, -7 range, -8 abnormal flag,
+            # -11 result status, -14 date/time of observation, -18 equipment instance identifier.
+            fields = ["OBX", str(index), value_type, f"{self._clean(result.code)}^{self._clean(result.name)}", "", value,
+                      self._clean(result.units), self._clean(result.reference_range), self._clean(result.abnormal_flag),
+                      "", "", self._clean(result.result_status or "F"), "", "", observed, "", "", "",
+                      self._clean(self.settings.analyzer_name)]
+            lines.append("|".join(fields))
         return "\r".join(lines) + "\r", control_id
+
+    _NUMBER = re.compile(r"^-?\d+(?:\.\d+)?$")
+    _COMPARATOR = re.compile(r"^(<=|>=|<|>)\s*(-?\d+(?:\.\d+)?)$")
+
+    def _typed_value(self, raw: str) -> tuple[str, str]:
+        """OBX-2/OBX-5: NM for plain numbers, SN ("<^0.5") for comparator values, ST for text."""
+        text = self._clean(raw).strip()
+        if self._NUMBER.match(text):
+            return "NM", text
+        match = self._COMPARATOR.match(text)
+        if match:
+            return "SN", f"{match.group(1)}^{match.group(2)}"
+        return "ST", text.replace("^", " ")
 
     def build_result(
         self,

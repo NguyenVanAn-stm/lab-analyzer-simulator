@@ -23,3 +23,6 @@ class AnalyzerTransport(ABC):
         expect_response: bool = True,
     ) -> str:
         raise NotImplementedError
+
+    def close(self) -> None:  # noqa: B027 - optional hook; transports without a held link need nothing
+        """Release a held connection or listener. Called when the engine replaces the transport."""
