@@ -1,0 +1,25 @@
+{
+  "mode": "live",
+  "analyzer": {
+    "name": "SIM-01 — lab-analyzer-simulator (LIS GD10)"
+  },
+  "protocol": {
+    "type": "astm"
+  },
+  "transport": {
+    "type": "tcp",
+    "host": "127.0.0.1",
+    "port": 5101,
+    "timeout_seconds": 30
+  },
+  "astm": {
+    "query_mode": true,
+    "frame_size": 240,
+    "retry_count": 3,
+    "checksum": true,
+    "receive_timeout_seconds": 30,
+    "tcp_role": "client",
+    "keep_connection": true,
+    "encoding": "latin-1"
+  }
+}

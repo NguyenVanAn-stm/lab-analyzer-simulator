@@ -210,6 +210,7 @@ class AstmProtocol(AnalyzerProtocol):
                         6: self._esc(self._reference_range(result.reference_range)),
                         7: self._esc(result.abnormal_flag),
                         9: self._esc(result.result_status),
+                        11: self._esc(self.settings.default_operator),
                         13: completed,
                         14: self._esc(self.settings.analyzer_name),
                     },

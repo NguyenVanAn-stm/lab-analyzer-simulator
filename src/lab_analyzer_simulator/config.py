@@ -69,6 +69,7 @@ def load_settings(config_path: Path | None = None) -> Settings:
         "astm_tcp_role": os.getenv(prefix + "ASTM_TCP_ROLE"),
         "astm_keep_connection": os.getenv(prefix + "ASTM_KEEP_CONNECTION"),
         "astm_encoding": os.getenv(prefix + "ASTM_ENCODING"),
+        "default_operator": os.getenv(prefix + "OPERATOR"),
     }
     converted: dict[str, Any] = {}
     integer_fields = {"web_port", "gateway_port", "max_message_bytes", "random_seed", "astm_frame_size", "astm_retry_count"}

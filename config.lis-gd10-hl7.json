@@ -1,0 +1,23 @@
+{
+  "mode": "live",
+  "analyzer": {
+    "name": "SIM-02-HL7 — lab-analyzer-simulator (LIS GD10)"
+  },
+  "protocol": {
+    "type": "hl7"
+  },
+  "transport": {
+    "type": "mllp",
+    "host": "127.0.0.1",
+    "port": 2575,
+    "timeout_seconds": 30
+  },
+  "hl7": {
+    "sender_application": "LAB_ANALYZER_SIMULATOR",
+    "sender_facility": "SIMULATOR",
+    "receiver_application": "LAB_HOST",
+    "receiver_facility": "LAB",
+    "version": "2.5",
+    "protocol_profile": "lab.analyzer.simulator.v1"
+  }
+}

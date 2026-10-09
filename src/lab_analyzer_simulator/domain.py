@@ -148,3 +148,5 @@ class Settings:
     astm_keep_connection: bool = True
     # LIS02-A2 is 8-bit; latin-1 round-trips every byte. Use utf-8 when the host sends UTF-8 names.
     astm_encoding: str = "latin-1"
+    # ASTM R.11 — operator / người chạy (LIS four-eyes: performedBy).
+    default_operator: str = "lis.ktv"
