@@ -18,10 +18,12 @@ $env:LAB_SIM_MODE = "live"
 $env:LAB_SIM_GATEWAY_HOST = "127.0.0.1"
 $env:LAB_SIM_GATEWAY_PORT = "2575"
 $env:LAB_SIM_OPERATOR = "lis.ktv"
+if (-not $env:LAB_SIM_WEB_PORT) { $env:LAB_SIM_WEB_PORT = "8001" }
 
 $gwHost = $env:LAB_SIM_GATEWAY_HOST
 $gwPort = $env:LAB_SIM_GATEWAY_PORT
-Write-Host "Mo http://127.0.0.1:8000 | Connector SIM-02-HL7 (HL7/MLLP) tai ${gwHost}:${gwPort}" -ForegroundColor Cyan
-Write-Host "Neu vua chay ASTM: dong tab simulator cu hoac doi port - ASTM=5101, HL7=2575." -ForegroundColor DarkYellow
-& $venvPython -m lab_analyzer_simulator --root . --config config.lis-gd10-hl7.json web
+$webPort = $env:LAB_SIM_WEB_PORT
+Write-Host "Mo http://127.0.0.1:${webPort} | Connector SIM-02-HL7 (HL7/MLLP) tai ${gwHost}:${gwPort}" -ForegroundColor Cyan
+Write-Host "ASTM van chay song song: UI 8000 -> 5101, HL7 UI ${webPort} -> 2575." -ForegroundColor DarkYellow
+& $venvPython -m lab_analyzer_simulator --root . --config config.lis-gd10-hl7.json web --port $webPort
 
