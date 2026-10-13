@@ -1,8 +1,8 @@
 <!doctype html>
-<html lang="en">
+<html lang="vi">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Lab Analyzer Simulator</title>
+  <title>Máy xét nghiệm giả lập</title>
   <style>
     :root { color-scheme: light; font-family: system-ui, sans-serif; background: #f4f7fb; color: #17324d; }
     body { margin: 0; } main { max-width: 1180px; margin: 0 auto; padding: 28px 18px; }
@@ -15,39 +15,155 @@
     .status { background: #eef8f2; border: 1px solid #b8dfc8; padding: 14px; border-radius: 8px; white-space: pre-wrap; }
     pre { background: #11283b; color: #e2f1ff; padding: 16px; border-radius: 8px; overflow: auto; max-height: 360px; }
     .warning { color: #7a4b00; background: #fff7df; border: 1px solid #edd18a; padding: 12px; border-radius: 8px; }
+    .msg { border: 1px solid #d6e1ec; border-radius: 10px; margin-bottom: 14px; overflow: hidden; }
+    .msg-head { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 14px; background: #f1f6fb; font-size: 14px; }
+    .msg-body { padding: 12px 14px; }
+    .badge { display: inline-block; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 700; color: white; }
+    .b-out { background: #146ec1; } .b-in { background: #198754; } .b-err { background: #c0392b; } .b-proto { background: #6c4bb4; }
+    table.kq { width: 100%; border-collapse: collapse; font-size: 14px; margin: 6px 0 10px; }
+    table.kq th { text-align: left; background: #e6eef6; padding: 7px 9px; border-bottom: 2px solid #b8cada; }
+    table.kq td { padding: 7px 9px; border-bottom: 1px solid #e3ebf3; }
+    table.kq td.num, table.kq th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    tr.bat td { background: #fff1f0; } tr.bat .co { color: #c0392b; font-weight: 800; }
+    .info { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 6px 18px; margin-bottom: 10px; font-size: 14px; }
+    .info b { color: #58728b; font-weight: 600; }
+    .raw-title { font-weight: 700; margin: 10px 0 4px; font-size: 14px; }
+    pre.raw { margin: 0; font-size: 13px; line-height: 1.55; white-space: pre-wrap; word-break: break-all; max-height: 420px; }
+    .rt-R, .rt-OBX { color: #7ee2a8; font-weight: 700; } .rt-H, .rt-L, .rt-MSH { color: #8fa9c0; } .rt-P, .rt-O, .rt-PID, .rt-OBR { color: #ffd479; } .rt-C, .rt-NTE { color: #ff9f9f; }
+    details > summary { cursor: pointer; font-weight: 700; margin: 8px 0; }
+    .run { border: 1px solid #d6e1ec; border-radius: 10px; padding: 14px; margin-bottom: 14px; }
+    .run h3 { margin: 0 0 10px; font-size: 16px; }
     video { max-width: 360px; width: 100%; border-radius: 8px; margin-top: 10px; display: none; }
   </style>
 </head>
 <body><main>
-  <header><h1>Lab Analyzer Simulator</h1><div class="muted">Generic synthetic laboratory analyzer for HL7/MLLP and ASTM/TCP integration testing.</div></header>
-  <section><h2>Analyzer control</h2>
+  <header><h1>Máy xét nghiệm giả lập</h1><div class="muted">Máy xét nghiệm giả lập dùng để kiểm thử kết nối HL7/MLLP và ASTM/TCP với LIS.</div></header>
+  <section><h2>Điều khiển máy xét nghiệm</h2>
     <div class="grid">
-      <label>Protocol<select id="protocol" onchange="selectProtocol()"><option value="hl7">HL7 v2 / MLLP</option><option value="astm">ASTM / TCP</option></select></label>
-      <label>Sample barcode / QR value<input id="sample" list="sample-options" autocomplete="off" placeholder="Scan or enter a specimen barcode"><datalist id="sample-options"></datalist></label>
-      <label>Result profile<select id="profile"></select></label>
-      <label>Scenario<select id="scenario"><option>normal</option><option>unknown-sample</option><option>duplicate</option><option>timeout</option><option>delayed-ack</option><option>malformed-mllp</option><option>malformed-hl7</option><option>no-ack</option><option>nak</option><option>reject-ack</option><option>reset</option><option>unavailable</option><option>bad-id</option><option>oversized</option><option>unexpected-response</option><option>invalid-encoding</option><option>disconnect</option><option>invalid-checksum</option><option>wrong-frame-number</option><option>missing-ack</option><option>duplicate-frame</option><option>corrupted-frame</option><option>oversized-frame</option><option>connection-reset-mid-frame</option><option>connection-reset-between-frames</option><option>missing-eot</option><option>unexpected-eot</option><option>enq-collision</option><option>invalid-record-sequence</option></select></label>
+      <label>Giao thức<select id="protocol" onchange="selectProtocol()"><option value="hl7">HL7 v2 / MLLP</option><option value="astm">ASTM / TCP</option></select></label>
+      <label>Mã vạch / QR của mẫu<input id="sample" list="sample-options" autocomplete="off" placeholder="Quét hoặc nhập mã vạch ống mẫu"><datalist id="sample-options"></datalist></label>
+      <label>Bộ kết quả giả lập<select id="profile"></select></label>
+      <label>Kịch bản<select id="scenario"></select></label>
     </div>
-    <div class="actions"><button onclick="querySample()">Scan and query worklist</button><button class="green" onclick="runProfile()">Run selected profile</button><button class="secondary" onclick="startCamera()">Camera scanner</button><button class="secondary" onclick="refresh()">Refresh</button><button class="secondary" onclick="resetSimulator()">Reset</button></div>
+    <div class="actions"><button onclick="querySample()">Quét &amp; hỏi danh sách chờ</button><button class="green" onclick="runProfile()">Chạy bộ kết quả đã chọn</button><button class="secondary" onclick="startCamera()">Quét bằng camera</button><button class="secondary" onclick="refresh()">Làm mới</button><button class="secondary" onclick="resetSimulator()">Đặt lại</button></div>
     <video id="camera" autoplay playsinline></video>
-    <p class="warning">Fixture mode uses synthetic worklists and never creates orders. Live mode sends the selected protocol to the configured host. Use only in an isolated test environment; do not expose this service directly to the public Internet.</p>
-    <div id="worklist" class="status">Loading simulator status…</div>
+    <p class="warning">Chế độ fixture dùng danh sách chờ giả, không tạo chỉ định thật. Chế độ live gửi bản tin theo giao thức đã chọn tới host cấu hình (Connector LIS). Chỉ dùng trong môi trường thử nghiệm cô lập, không mở trực tiếp ra Internet.</p>
+    <div id="worklist" class="status">Đang tải trạng thái máy…</div>
   </section>
-  <section><h2>Protocol developer console</h2><pre id="console">No messages yet.</pre></section>
-  <section><h2>Recent runs</h2><pre id="runs">No runs yet.</pre></section>
+  <section><h2>Nhật ký bản tin giao thức</h2><div class="raw-title">Dạng dễ đọc</div><div id="console"><div class="muted">Chưa có bản tin nào.</div></div>
+    <div class="raw-title">Dạng gốc (inbound / outbound)</div><pre id="console-raw">Chưa có bản tin nào.</pre></section>
+  <section><h2>Các lượt chạy gần đây</h2><div class="raw-title">Dạng dễ đọc</div><div id="runs"><div class="muted">Chưa có lượt chạy nào.</div></div>
+    <div class="raw-title">Dạng gốc (JSON)</div><pre id="runs-raw">Chưa có lượt chạy nào.</pre></section>
   <script>
     const $ = id => document.getElementById(id);
     let cameraStream = null;
+    let tinNhanCuoi = [];
+
+    const KICH_BAN = {normal:'Bình thường', 'unknown-sample':'Mẫu không có trong LIS', duplicate:'Gửi trùng', timeout:'Hết thời gian chờ', 'delayed-ack':'ACK chậm', 'malformed-mllp':'MLLP sai khung', 'malformed-hl7':'HL7 sai cấu trúc', 'no-ack':'Không có ACK', nak:'NAK', 'reject-ack':'LIS từ chối (AR)', reset:'Đứt kết nối', unavailable:'Host không sẵn sàng', 'bad-id':'Mã mẫu sai', oversized:'Bản tin quá lớn', 'unexpected-response':'Phản hồi bất thường', 'invalid-encoding':'Sai mã hoá ký tự', disconnect:'Ngắt kết nối', 'invalid-checksum':'Sai checksum', 'wrong-frame-number':'Sai số frame', 'missing-ack':'Thiếu ACK', 'duplicate-frame':'Trùng frame', 'corrupted-frame':'Frame hỏng', 'oversized-frame':'Frame quá lớn', 'connection-reset-mid-frame':'Đứt kết nối giữa frame', 'connection-reset-between-frames':'Đứt kết nối giữa các frame', 'missing-eot':'Thiếu EOT', 'unexpected-eot':'EOT bất ngờ', 'enq-collision':'Va chạm ENQ', 'invalid-record-sequence':'Sai thứ tự record'};
+    const TRANG_THAI = {DISCONNECTED:'Chưa kết nối', CONNECTED:'Đã kết nối', IDLE:'Rảnh', BARCODE_SCANNED:'Đã quét mã vạch', QUERYING_HOST:'Đang hỏi LIS', ORDER_RECEIVED:'Đã nhận chỉ định', READY:'Sẵn sàng chạy', PROCESSING:'Đang chạy mẫu', RESULT_GENERATED:'Đã có kết quả', SENDING_RESULT:'Đang gửi kết quả', WAITING_ACK:'Chờ LIS xác nhận (ACK)', COMPLETED:'Hoàn tất', FAILED:'Thất bại'};
+    const LOI = {HOST_UNAVAILABLE:'Không nối được LIS/Connector', UNKNOWN_SAMPLE:'Mẫu không có trong LIS', QUERY_REJECTED:'LIS từ chối truy vấn', INVALID_ORDER:'Chỉ định không hợp lệ', PROCESSING_FAILED:'Máy chạy mẫu lỗi', TRANSMISSION_FAILED:'Gửi bản tin lỗi', RESULT_REJECTED:'LIS từ chối kết quả', TIMEOUT:'Hết thời gian chờ', PROTOCOL_ERROR:'Lỗi giao thức'};
+    const LOAI_BAN_TIN = {query:'Máy hỏi danh sách chờ', worklist:'LIS trả chỉ định', result:'Máy gửi kết quả', ack:'LIS xác nhận (ACK)'};
+    const CO = {H:'Cao', L:'Thấp', HH:'Cao nguy hiểm', LL:'Thấp nguy hiểm', N:'Bình thường', A:'Bất thường', '>':'Vượt ngưỡng trên', '<':'Dưới ngưỡng'};
+    const TT_KQ = {F:'Cuối cùng', P:'Sơ bộ', C:'Đã sửa', R:'Chưa xác nhận', X:'Không chạy được'};
+
+    const BO_KQ = {'blood-gas-normal':'Khí máu - trong giới hạn bình thường', 'cbc-abnormal':'Công thức máu - có cờ bất thường', 'cbc-critical':'Công thức máu - giá trị nguy kịch', 'cbc-normal':'Công thức máu - bình thường', 'chemistry-extended':'Hoá sinh - bộ xét nghiệm mở rộng', 'chemistry-normal':'Hoá sinh - bình thường', 'coagulation-extended':'Đông máu - bộ mở rộng', 'coagulation-normal':'Đông máu - bình thường', 'hematology-extended':'Huyết học - 5 thành phần và tốc độ máu lắng', 'immunoassay-extended':'Miễn dịch - các xét nghiệm thường gặp', 'immunoassay-normal':'Miễn dịch - bình thường', 'urinalysis-normal':'Nước tiểu - sàng lọc bình thường'};
+    const LOAI_MAY = {'blood-gas':'máy khí máu', hematology:'máy huyết học', chemistry:'máy hoá sinh', coagulation:'máy đông máu', immunoassay:'máy miễn dịch', urinalysis:'máy nước tiểu'};
+    const TEN_XN = {"pH": "pH máu", "pCO2": "Phân áp CO2 (pCO2)", "pO2": "Phân áp O2 (pO2)", "LAC": "Lactate", "WBC": "Số lượng bạch cầu", "RBC": "Số lượng hồng cầu", "HGB": "Huyết sắc tố (Hemoglobin)", "HCT": "Hematocrit", "PLT": "Số lượng tiểu cầu", "GLU": "Glucose", "BUN": "Urê máu (BUN)", "URE": "Urê", "CREA": "Creatinine", "ALT": "ALT (GPT)", "AST": "AST (GOT)", "ALP": "ALP (Phosphatase kiềm)", "NA": "Natri (Na+)", "K": "Kali (K+)", "CL": "Clo (Cl-)", "CHOL": "Cholesterol toàn phần", "HDL": "HDL-Cholesterol", "LDL": "LDL-Cholesterol", "TG": "Triglycerid", "PT": "Thời gian Prothrombin (PT)", "INR": "Chỉ số INR", "APTT": "Thời gian APTT", "FIB": "Fibrinogen", "D-DIMER": "D-Dimer", "MCV": "Thể tích trung bình hồng cầu (MCV)", "MCH": "Lượng Hb trung bình hồng cầu (MCH)", "MCHC": "Nồng độ Hb trung bình hồng cầu (MCHC)", "NEUT": "Bạch cầu trung tính", "LYMPH": "Bạch cầu lympho", "MONO": "Bạch cầu mono", "EOS": "Bạch cầu ái toan", "BASO": "Bạch cầu ái kiềm", "ESR": "Tốc độ máu lắng (ESR)", "TSH": "TSH", "FT4": "FT4 (Thyroxine tự do)", "TROP": "Troponin", "FERR": "Ferritin", "VITD": "Vitamin D", "B12": "Vitamin B12", "BHCG": "Beta-hCG", "PSA": "PSA", "U-PH": "pH nước tiểu", "U-PRO": "Protein niệu", "U-GLU": "Glucose niệu", "U-BLD": "Hồng cầu niệu (máu)", "LDH": "LDH"};
+    $('scenario').innerHTML = Object.entries(KICH_BAN).map(([k, v]) => `<option value="${k}">${v} (${k})</option>`).join('');
+
+    const esc = t => String(t ?? '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    const tt = v => TRANG_THAI[v] || v;
+    const loi = v => LOI[v] || v;
+    const gio = iso => { const d = new Date(iso); return isNaN(d) ? (iso || '') : d.toLocaleTimeString('vi-VN') + '.' + String(d.getMilliseconds()).padStart(3, '0'); };
+
+    // Tách bản tin ASTM/HL7 thành từng record; bỏ ký tự điều khiển khung (STX/ETX/EOT/ENQ/ACK/NAK/ETB, MLLP).
+    function tachRecord(raw) {
+      return String(raw || '').replace(/[\x02\x03\x04\x05\x06\x15\x17\x0b\x1c]/g, '').split(/\r\n|\r|\n/)
+        .map(l => l.replace(/^\d(?=[A-Z][A-Z0-9]{0,2}\|)/, '').trim()).filter(Boolean);
+    }
+    const truong = (rec, i) => rec.split('|')[i] ?? '';
+    const thanhPhan = (v, i) => v.split('^')[i] ?? '';
+    const maXn = v => { const p = v.split('^').filter(Boolean); return p.length ? p[p.length - 1] : v; };
+    const laDongKq = (l, hl7) => hl7 ? l.startsWith('OBX|') : /^R\|/.test(l);
+
+    // Rút kết quả + thông tin hành chính từ bản tin (ASTM: H/P/O/R/C — HL7: MSH/PID/OBR/OBX/NTE).
+    function phanTich(msg, giaoThuc) {
+      const recs = tachRecord(msg);
+      const hl7 = giaoThuc === 'hl7' || /^MSH\|/.test(recs[0] || '');
+      const kq = [], t = {}, ghiChu = [];
+      for (const r of recs) {
+        const loai = r.split('|')[0];
+        if (!hl7) {
+          if (loai === 'R') kq.push({stt: truong(r,1), ma: maXn(truong(r,2)), ten: TEN_XN[maXn(truong(r,2))] || '', gt: truong(r,3), dv: truong(r,4), kt: truong(r,5), co: truong(r,6), tt: truong(r,8)});
+          else if (loai === 'P') { t.maBn = truong(r,2); t.hoTen = truong(r,5).replace(/\^/g, ' '); }
+          else if (loai === 'O') { t.maPhieu = truong(r,2); t.barcode = truong(r,3); t.xn = truong(r,4).split('\\').map(maXn).join(', '); }
+          else if (loai === 'H') t.may = thanhPhan(truong(r,4), 0);
+          else if (loai === 'C') ghiChu.push(truong(r,3).replace(/\^/g, ' '));
+        } else {
+          if (loai === 'OBX') kq.push({stt: truong(r,1), ma: thanhPhan(truong(r,3),0), ten: thanhPhan(truong(r,3),1) || TEN_XN[thanhPhan(truong(r,3),0)] || '', gt: truong(r,5), dv: thanhPhan(truong(r,6),0), kt: truong(r,7), co: truong(r,8), tt: truong(r,11)});
+          else if (loai === 'PID') { t.maBn = thanhPhan(truong(r,3),0); t.hoTen = truong(r,5).replace(/\^/g, ' '); }
+          else if (loai === 'OBR') { t.maPhieu = truong(r,2); t.barcode = truong(r,3); }
+          else if (loai === 'MSH') t.may = truong(r,2);
+          else if (loai === 'NTE') ghiChu.push(truong(r,3).replace(/\^/g, ' '));
+        }
+      }
+      return {recs, kq, t, ghiChu, hl7};
+    }
+
+    const mauRecord = line => `<span class="rt-${esc(line.split('|')[0])}">${esc(line)}</span>`;
+    const preRaw = lines => `<pre class="raw">${lines.map(mauRecord).join('\n')}</pre>`;
+    function bangKetQua(kq) {
+      if (!kq.length) return '';
+      const co = x => (x || '').toUpperCase();
+      return `<table class="kq"><thead><tr><th>#</th><th>Mã XN</th><th>Tên</th><th class="num">Kết quả</th><th>Đơn vị</th><th>Khoảng tham chiếu</th><th>Cờ</th><th>Trạng thái</th></tr></thead><tbody>` +
+        kq.map(k => { const c = co(k.co); const bat = c && c !== 'N';
+          return `<tr class="${bat ? 'bat' : ''}"><td>${esc(k.stt)}</td><td><b>${esc(k.ma)}</b></td><td>${esc(k.ten)}</td><td class="num"><b>${esc(k.gt)}</b></td><td>${esc(k.dv)}</td><td>${esc(k.kt)}</td><td class="co">${c ? esc((CO[c] || k.co) + ' (' + k.co + ')') : ''}</td><td>${esc(TT_KQ[k.tt] || k.tt)}</td></tr>`; }).join('') + '</tbody></table>';
+    }
+    function thongTin(t) {
+      const m = [['Máy', t.may], ['Bệnh nhân', t.hoTen], ['Mã BN', t.maBn], ['Số phiếu', t.maPhieu], ['Barcode ống', t.barcode], ['Xét nghiệm chỉ định', t.xn]].filter(x => x[1]);
+      return m.length ? `<div class="info">${m.map(x => `<div><b>${x[0]}:</b> ${esc(x[1])}</div>`).join('')}</div>` : '';
+    }
+
+    function renderBanTin(x, proto) {
+      const giaoThuc = String(x.protocol || proto || '').toUpperCase();
+      const p = phanTich(x.message, x.protocol || proto);
+      const huong = x.direction === 'outbound' ? '<span class="badge b-out">Máy → LIS</span>' : '<span class="badge b-in">LIS → Máy</span>';
+      const laKetQua = x.kind === 'result';
+      const dsR = p.recs.filter(l => laDongKq(l, p.hl7));
+      let body;
+      if (!p.recs.length) body = '<div class="muted">(Bản tin rỗng — giao thức này không yêu cầu LIS phản hồi)</div>';
+      else {
+        body = thongTin(p.t) + bangKetQua(p.kq);
+        if (p.ghiChu.length) body += `<div class="info"><div><b>Ghi chú của máy:</b> ${p.ghiChu.map(esc).join('; ')}</div></div>`;
+        if (laKetQua && dsR.length) body += `<div class="raw-title">Kết quả cuối cùng máy XN trả về (${p.hl7 ? 'các dòng OBX' : 'các dòng R'}):</div>${preRaw(dsR)}`;
+        body += `<details ${laKetQua ? '' : 'open'}><summary>Bản tin gốc đầy đủ (${p.recs.length} dòng)</summary>${preRaw(p.recs)}</details>`;
+      }
+      return `<div class="msg"><div class="msg-head"><span class="badge b-proto">${esc(giaoThuc)}</span>${huong}<b>${esc(LOAI_BAN_TIN[x.kind] || x.kind)}</b><span class="muted">${esc(gio(x.timestamp))}</span></div><div class="msg-body">${body}</div></div>`;
+    }
+
+    function renderLuot(r, tinNhan) {
+      const kqMsg = [...tinNhan].reverse().find(m => m.kind === 'result');
+      const p = kqMsg ? phanTich(kqMsg.message, kqMsg.protocol || r.protocol) : null;
+      const dsR = p ? p.recs.filter(l => laDongKq(l, p.hl7)) : [];
+      const ok = r.state === 'COMPLETED';
+      return `<div class="run"><h3><span class="badge ${ok ? 'b-in' : 'b-err'}">${esc(tt(r.state))}</span> Mẫu ${esc(r.sample_identifier)} · ${esc(String(r.protocol || '').toUpperCase())}</h3>` +
+        `<div class="info"><div><b>Mã lượt chạy:</b> ${esc(r.run_id)}</div><div><b>Bộ kết quả:</b> ${esc(r.profile_id)}</div><div><b>Kịch bản:</b> ${esc(KICH_BAN[r.scenario_id] || r.scenario_id)}</div><div><b>Số kết quả:</b> ${esc(r.result_count)}</div><div><b>Mã bản tin:</b> ${esc(r.message_control_id || '-')}</div><div><b>Bắt đầu:</b> ${esc(gio(r.created_at))}</div><div><b>Kết thúc:</b> ${r.completed_at ? esc(gio(r.completed_at)) : '-'}</div>` +
+        (r.failure ? `<div><b>Lỗi:</b> ${esc(loi(r.failure))}</div>` : '') + (r.error ? `<div><b>Chi tiết:</b> ${esc(r.error)}</div>` : '') + '</div>' +
+        (p ? thongTin(p.t) + bangKetQua(p.kq) : '') +
+        (dsR.length ? `<div class="raw-title">Kết quả cuối cùng máy XN trả về:</div>${preRaw(dsR)}` : '') + '</div>';
+    }
+
     async function api(path, options) { const response = await fetch(path, {headers:{'Content-Type':'application/json'}, ...options}); const data = await response.json(); if (!response.ok) throw new Error(data.error || response.statusText); return data; }
-    function renderStatus(data) { const w = data.worklist; const run = data.activeRun; $('worklist').textContent = `Protocol: ${data.activeProtocol}\nAnalyzer: ${data.activeAnalyzer}\nScenario: ${data.activeScenario}\nState: ${data.analyzerState}${data.failure ? `\nFailure: ${data.failure}` : ''}\nProgress: ${data.progress}%` + (run ? `\nRun: ${run.run_id}\nCurrent test: ${run.current_test || 'complete'}\nElapsed: ${Number(run.elapsed_seconds || 0).toFixed(2)} seconds` : '') + (w ? `\n\nOrder: ${w.order_number}\nPatient: ${w.patient_name}\nSample: ${w.sample_identifier}\nTests: ${w.ordered_tests.map(t => t.code + ' — ' + t.name).join(', ')}` : '\n\nNo worklist loaded.'); }
-    async function refreshConsole(protocol) { const messages = await api('/api/messages'); $('console').textContent = messages.items.length ? messages.items.map(x => `[${x.timestamp}] ${x.protocol || protocol} ${x.direction} ${x.kind}\n${x.message}`).join('\n\n') : 'No messages yet.'; return messages.items; }
-    async function refresh() { const data = await api('/api/status'); const selectedSample = $('sample').value; const selectedProfile = $('profile').value; $('protocol').value = data.activeProtocol; const sampleOptions = $('sample-options'); sampleOptions.replaceChildren(...data.available_samples.map(x => { const option = document.createElement('option'); option.value = x; return option; })); $('sample').value = data.sample_identifier || selectedSample || data.available_samples[0] || ''; $('profile').innerHTML = data.available_profiles.map(x => `<option value="${x.id}">${x.name} (${x.analyzer_type})</option>`).join(''); $('profile').value = data.activeResultProfile || selectedProfile || data.available_profiles[0]?.id || ''; $('scenario').value = data.activeScenario; renderStatus(data); await refreshConsole(data.activeProtocol); const runs = await api('/api/runs'); $('runs').textContent = runs.items.length ? JSON.stringify(runs.items, null, 2) : 'No runs yet.'; }
+    function renderStatus(data) { const w = data.worklist; const run = data.activeRun; $('worklist').textContent = `Giao thức: ${String(data.activeProtocol).toUpperCase()}\nMáy: ${data.activeAnalyzer}\nKịch bản: ${KICH_BAN[data.activeScenario] || data.activeScenario}\nTrạng thái: ${tt(data.analyzerState)}${data.failure ? `\nLỗi: ${loi(data.failure)}` : ''}\nTiến độ: ${data.progress}%` + (run ? `\nLượt chạy: ${run.run_id}\nXét nghiệm đang chạy: ${run.current_test || 'đã xong'}\nĐã chạy: ${Number(run.elapsed_seconds || 0).toFixed(2)} giây` : '') + (w ? `\n\nPhiếu: ${w.order_number}\nBệnh nhân: ${w.patient_name}\nMã mẫu: ${w.sample_identifier}\nXét nghiệm: ${w.ordered_tests.map(t => t.code + ' — ' + t.name).join(', ')}` : '\n\nChưa nạp danh sách chờ.'); }
+    async function refreshConsole(protocol) { const messages = await api('/api/messages'); tinNhanCuoi = messages.items; $('console-raw').textContent = messages.items.length ? messages.items.map(x => `[${x.timestamp}] ${x.protocol || protocol} ${x.direction} ${x.kind}` + String.fromCharCode(10) + x.message).join(String.fromCharCode(10, 10)) : 'Chưa có bản tin nào.'; $('console').innerHTML = messages.items.length ? messages.items.map(x => renderBanTin(x, protocol)).join('') : '<div class="muted">Chưa có bản tin nào.</div>'; return messages.items; }
+    async function refresh() { const data = await api('/api/status'); const selectedSample = $('sample').value; const selectedProfile = $('profile').value; $('protocol').value = data.activeProtocol; const sampleOptions = $('sample-options'); sampleOptions.replaceChildren(...data.available_samples.map(x => { const option = document.createElement('option'); option.value = x; return option; })); $('sample').value = data.sample_identifier || selectedSample || data.available_samples[0] || ''; $('profile').innerHTML = data.available_profiles.map(x => `<option value="${esc(x.id)}">${esc(BO_KQ[x.id] || x.name)} (${esc(LOAI_MAY[x.analyzer_type] || x.analyzer_type)})</option>`).join(''); $('profile').value = data.activeResultProfile || selectedProfile || data.available_profiles[0]?.id || ''; $('scenario').value = data.activeScenario; renderStatus(data); await refreshConsole(data.activeProtocol); const runs = await api('/api/runs'); $('runs-raw').textContent = runs.items.length ? JSON.stringify(runs.items, null, 2) : 'Chưa có lượt chạy nào.'; $('runs').innerHTML = runs.items.length ? [...runs.items].reverse().map(r => renderLuot(r, tinNhanCuoi)).join('') : '<div class="muted">Chưa có lượt chạy nào.</div>'; }
     async function selectProtocol() { try { await api('/api/protocol', {method:'POST', body:JSON.stringify({protocol:$('protocol').value})}); await refresh(); } catch (e) { alert(e.message); } }
     async function selectScenario() { await api('/api/scenario', {method:'POST', body:JSON.stringify({scenario_id:$('scenario').value})}); }
     async function querySample() { try { await selectScenario(); const data = await api('/api/query', {method:'POST', body:JSON.stringify({sample_identifier:$('sample').value})}); renderStatus(data.status); await refresh(); } catch (e) { alert(e.message); await refresh(); } }
     async function runProfile() { try { await selectScenario(); const data = await api('/api/run', {method:'POST', body:JSON.stringify({sample_identifier:$('sample').value, profile_id:$('profile').value})}); const runId = data.run.run_id; await pollRun(runId); } catch (e) { alert(e.message); await refresh(); } }
-    async function pollRun(runId) { for (let i=0; i<300; i++) { const data = await api('/api/runs/' + encodeURIComponent(runId)); renderStatus((await api('/api/status'))); if (['COMPLETED','FAILED'].includes(data.run.state)) { for (let attempt = 0; attempt < 10; attempt++) { if ((await refreshConsole(data.run.protocol)).length) break; await new Promise(resolve => setTimeout(resolve, 50)); } await refresh(); return; } await new Promise(resolve => setTimeout(resolve, 100)); } throw new Error('run polling timed out'); }
+    async function pollRun(runId) { for (let i=0; i<300; i++) { const data = await api('/api/runs/' + encodeURIComponent(runId)); renderStatus((await api('/api/status'))); if (['COMPLETED','FAILED'].includes(data.run.state)) { for (let attempt = 0; attempt < 10; attempt++) { if ((await refreshConsole(data.run.protocol)).length) break; await new Promise(resolve => setTimeout(resolve, 50)); } await refresh(); return; } await new Promise(resolve => setTimeout(resolve, 100)); } throw new Error('Hết thời gian chờ lượt chạy'); }
     async function resetSimulator() { await api('/api/reset', {method:'POST', body:'{}'}); await refresh(); }
-    async function startCamera() { if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) { alert('Camera barcode detection is not available in this browser. Use manual entry or a USB keyboard-wedge scanner.'); return; } if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); cameraStream = null; $('camera').style.display = 'none'; return; } try { cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); const video = $('camera'); video.srcObject = cameraStream; video.style.display = 'block'; const detector = new BarcodeDetector(); const scan = async () => { if (!cameraStream) return; try { const codes = await detector.detect(video); if (codes.length && codes[0].rawValue) { $('sample').value = codes[0].rawValue; $('sample').dispatchEvent(new Event('change')); } } catch (_) {} requestAnimationFrame(scan); }; scan(); } catch (e) { alert('Camera access failed: ' + e.message); } }
+    async function startCamera() { if (!('BarcodeDetector' in window) || !navigator.mediaDevices?.getUserMedia) { alert('Trình duyệt này không hỗ trợ quét mã vạch bằng camera. Hãy nhập tay hoặc dùng súng quét USB.'); return; } if (cameraStream) { cameraStream.getTracks().forEach(track => track.stop()); cameraStream = null; $('camera').style.display = 'none'; return; } try { cameraStream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment'}}); const video = $('camera'); video.srcObject = cameraStream; video.style.display = 'block'; const detector = new BarcodeDetector(); const scan = async () => { if (!cameraStream) return; try { const codes = await detector.detect(video); if (codes.length && codes[0].rawValue) { $('sample').value = codes[0].rawValue; $('sample').dispatchEvent(new Event('change')); } } catch (_) {} requestAnimationFrame(scan); }; scan(); } catch (e) { alert('Không mở được camera: ' + e.message); } }
     refresh().catch(e => { $('worklist').textContent = e.message; });
   </script>
 </main></body></html>
