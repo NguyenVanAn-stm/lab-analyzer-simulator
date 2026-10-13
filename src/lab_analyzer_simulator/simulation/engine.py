@@ -152,6 +152,8 @@ class SimulationEngine:
             self.current_worklist = None
             self.last_response = ""
             self.events.clear()
+            self.messages.clear()
+            self.runs.clear()
             self._transition(AnalyzerState.IDLE, detail="simulator reset")
 
     def query(self, sample_identifier: str, scenario_id: str | None = None) -> Worklist:
